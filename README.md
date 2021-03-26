@@ -1,2 +1,2 @@
-# WarChestIA
-IA to play war chest
+# warchest
+Implementing the boardgame Warchest / Champs d'honneur (in french) in python
