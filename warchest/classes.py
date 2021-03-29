@@ -9,27 +9,7 @@ class Game(object):
 
     def __init__(self, player1, player2, draft='random'):
         
-        self.cities = {
-            (-3, -1, -2),
-            (-2, -3, 1),
-            (-2, 1, -3),
-            (-1, 0, -1),
-            (0, -2, 2),
-            (0, 2, -2),
-            (1, 0, 1),
-            (2, -1, 3),
-            (2, 3, -1),
-            (3, 1, 2)}
-        
-        # When a city is taken
-        # remove it from the adversory's list
-        # add it to the player's list
-        # if length of player's list == 6 => WIN
-        
-        self.w_cities = {(-3, -1, -2), (-2, -3, 1)}
-        self.b_cities = {(2, 3, -1), (3, 1, 2)}
-        self.board = {(x-3, y-3, x-y) for x in range(7) for y in range(7) if abs(x-y) <=3}
-        self.units = {
+        units = {
             'crossbowman' : 5,
             'royal-guard' : 5,
             'mercenary' : 5,
@@ -46,17 +26,38 @@ class Game(object):
             'swordsman' : 5,
             'warrior-priest' : 4
             }
+        
+        self.bases = [
+            (-3, -1, -2),
+            (-2, -3, 1),
+            (-2, 1, -3),
+            (-1, 0, -1),
+            (0, -2, 2),
+            (0, 2, -2),
+            (1, 0, 1),
+            (2, -1, 3),
+            (2, 3, -1),
+            (3, 1, 2)]
+        
+        # When a base is taken
+        # remove it from the adversory's list
+        # add it to the player's list
+        # if length of player's list == 6 => WIN
+        
+        self.w_bases = self.bases[:2]
+        self.b_bases = self.bases[-2:]
+        self.board = {(x-3, y-3, x-y) for x in range(7) for y in range(7) if abs(x-y) <=3}
 
         # make draft
         if draft == 'random':
-            (units_draft, remaining_units) = self._random_unit_draft()
-            player1.set_unit_draft(units_draft)
-            (units_draft, _) = self._random_unit_draft(remaining_units)
-            player2.set_unit_draft(units_draft)
+            units_draft = random.sample(list(units), 8)
+            player1.set_unit_draft(units_draft[:4])
+            player2.set_unit_draft(units_draft[-4:])
         else:
             assert(draft == 'random'), "Manual draft not yet implemented"
 
         # initialize supply
+        player1.set_supply(units, player1.unit_draft)
 
 
         # Set initiative
@@ -100,11 +101,11 @@ class Game(object):
         except:
             print("units.csv file was not found.")
 
-    def _random_unit_draft(self, remaining_units={{}}):
+    def _random_unit_draft(self, remaining_units={}):
         if len(remaining_units) == 0:
             remaining_units = self.units
-        units_draft = remaining_units.sample(4)
-        remaining_units = self.units[~self.units['id'].isin(units_draft['id'])]
+        units_draft = random.sample(remaining_units, 4)
+        remaining_units = [unit for unit in self.units if unit not in units_draft]
         return (units_draft, remaining_units)
 
     # other function interacting with players ?
@@ -114,19 +115,33 @@ class Player(object):
     def __init__(self):
         self.unit_draft = []
         self.hand = []
-        self.supply = []
+        self.supply = {}
         self.discard = []
         self.eliminated = []
-        self.bag = []
+        self.bag = ['royal-coin']
 
     def set_unit_draft(self, unit_list):
         self.unit_draft = unit_list
 
     def set_supply(self, units, unit_draft):
-        pass
+        set.supply = {k:v-2 for k,v in units.items() if k in unit_draft}
+    
+    def set_bag(self, unit_draft):
+        for unit in unit_draft:
+            self.bag += list(unit) * 2
 
     def draw(self):
-        pass
+        hand_size = 0
+        while hand_size < 3:
+            if self.bag == []:
+                self.bag = self.discard
+                self.discard = []
+            else:
+                if self.discard == []:
+                    break
+                else:
+                    self.hand += random.sample(self.bag, 1)
+                    hand_size += 1
 
     def make_action(self):
         pass
